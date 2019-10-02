@@ -1,0 +1,444 @@
+
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  <title>體驗 Elasticsearch 的魅力 - Part 1 :: Docker | The name is Alex</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1">
+  <meta name="description" content="目的目前手上專案系統的 Log 仍然存在 MS SQL Server 裡。原因是因為系統後台一開始就建置了 Log 查詢的頁面功能。讓管理人員可以查詢系統登入、運作狀況以及 API 交換的每一筆訊息紀錄。這功能讓技術克服人員與開發人員很方便的進來系統撈取 Debug 錯誤時所需的有用資訊。 在初期快速開發的階段這些功能都是用 Entity Framework 建造以求開發迅速。但當系統上線後每日運">
+<meta name="keywords" content="elk">
+<meta property="og:type" content="article">
+<meta property="og:title" content="體驗 Elasticsearch 的魅力 - Part 1 :: Docker">
+<meta property="og:url" content="http://alexpacer.github.io/posts/fe234da5/index.html">
+<meta property="og:site_name" content="The name is Alex">
+<meta property="og:description" content="目的目前手上專案系統的 Log 仍然存在 MS SQL Server 裡。原因是因為系統後台一開始就建置了 Log 查詢的頁面功能。讓管理人員可以查詢系統登入、運作狀況以及 API 交換的每一筆訊息紀錄。這功能讓技術克服人員與開發人員很方便的進來系統撈取 Debug 錯誤時所需的有用資訊。 在初期快速開發的階段這些功能都是用 Entity Framework 建造以求開發迅速。但當系統上線後每日運">
+<meta property="og:locale" content="tw">
+<meta property="og:updated_time" content="2019-10-02T03:53:13.177Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="體驗 Elasticsearch 的魅力 - Part 1 :: Docker">
+<meta name="twitter:description" content="目的目前手上專案系統的 Log 仍然存在 MS SQL Server 裡。原因是因為系統後台一開始就建置了 Log 查詢的頁面功能。讓管理人員可以查詢系統登入、運作狀況以及 API 交換的每一筆訊息紀錄。這功能讓技術克服人員與開發人員很方便的進來系統撈取 Debug 錯誤時所需的有用資訊。 在初期快速開發的階段這些功能都是用 Entity Framework 建造以求開發迅速。但當系統上線後每日運">
+  <link rel="icon" href="/favicon.ico">
+  
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+    <link rel="stylesheet" href="/css/prism.css">
+  
+  
+<script type="application/ld+json">
+  {
+  "@context": "http://schema.org",
+  "@type": "BlogPosting",
+  "headline": "體驗 Elasticsearch 的魅力 - Part 1 :: Docker",
+  "name": "體驗 Elasticsearch 的魅力 - Part 1 :: Docker",
+  "datePublished": "2017-06-22T11:26:36.000Z",
+  "dateModified": "2019-10-02T03:53:13.177Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://alexpacer.github.io/posts/fe234da5/index.html"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Alex Wei",
+    "image": "/images/avatar.jpg"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Alex Wei",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/images/avatar.jpg"
+    }
+  }
+}
+</script>
+
+  
+  
+    <script src="/js/prism.js"></script>
+  
+  <!-- <link href="/css/prism.css" rel="stylesheet" /> -->
+  <link href="/css/prism-line-numbers.css" rel="stylesheet">
+<link rel="stylesheet" href="/css/prism-twilight.css" type="text/css"></head>
+</html>
+<body>
+  
+
+  <header class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a href="/" class="navbar-item">
+      The name is Alex
+    </a>
+  </div>
+</header>
+
+  <div class="container">
+    <div class="columns">
+      <div class="main column is-8">
+        <article class="post">
+  <figure class="post-thumbnail">
+    
+
+  </figure>
+  <span>2017-06-22
+</span>
+  <h1 class="title">體驗 Elasticsearch 的魅力 - Part 1 :: Docker</h1>
+  
+  <div class="tags">
+    
+      <a class="tag" href="/tags/elk/">elk</a>
+    
+  </div>
+
+
+  <div class="content">
+    <h2 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h2><p>目前手上專案系統的 Log 仍然存在 MS SQL Server 裡。原因是因為系統後台一開始就建置了 Log 查詢的頁面功能。讓管理人員可以查詢系統登入、運作狀況以及 API 交換的每一筆訊息紀錄。這功能讓技術克服人員與開發人員很方便的進來系統撈取 Debug 錯誤時所需的有用資訊。</p>
+<p>在初期快速開發的階段這些功能都是用 Entity Framework 建造以求開發迅速。但當系統上線後每日運轉下來 Log 的成長量也已大大超乎預期。雖然已經因為資料庫負荷沉重把 Log 搬離主要的交易資料庫放在較為次級的 SQL Server。但每日都有相當成長量讓我們不得不面對找尋完善的 Log 管理機制。</p>
+<p>這個測試，我們需要在不改變系統功能的前提下評估：</p>
+<ul>
+<li>Elasticsearch 的 REST API 是否足夠讓我們建置客製化的 API 來包裝讓並使用現有系統後台 Log 查詢機制來查詢 (不再用 Linq + Entity Framework 查 SQL Server)。</li>
+<li>Elasticsearch 完全替代 MS SQL 來存 Log：<ul>
+<li>備份與資料維護</li>
+<li>Clustering</li>
+<li>Failover 機制</li>
+<li>SSRS 報表的替代方案</li>
+</ul>
+</li>
+</ul>
+<p>相關應用</p>
+<ul>
+<li>Docker</li>
+<li>Elasticsearch</li>
+<li>Kibana</li>
+<li>Logstash</li>
+</ul>
+<h2 id="動手"><a href="#動手" class="headerlink" title="動手"></a>動手</h2><p>首先我們需要把 Elasticsearch 與 Kibana 設定好，然後倒一些 Log 進 Elasticsearch 並且試試 Kibana 上的查詢功能。</p>
+<p>這篇先寫第一部分，關於 Docker 的使用與設定。</p>
+<h3 id="設定-Docker"><a href="#設定-Docker" class="headerlink" title="設定 Docker"></a>設定 Docker</h3><p>用 Docker 來測試 ELK。可以避免在日常開發機器上裝太多不常用的系統服務。</p>
+<p>Docker Repository 上已經有許多 ELK 的 Image, 我選了 <a href="https://hub.docker.com/r/sebp/elk/" target="_blank" rel="noopener">sebp/elk</a>，並有提供詳細的<a href="http://elk-docker.readthedocs.io/#tweaking-the-image" target="_blank" rel="noopener">文件說明</a></p>
+<p>這個 docker image 上有所有 ELK Stack，啟動時需要指定開啟各服務所需要的連接埠讓本機可與 Container 溝通。執行方式如下:</p>
+<pre class=" language-bash"><code class="language-bash">docker run -p 5601:5601 -p 9200:9200 -p 5044:5044 -it --name elk sebp/elk
+</code></pre>
+<p>指定三個連接埠 (-p) 分別代表:</p>
+<ul>
+<li>9200: Elasticsearch</li>
+<li>5601: Kibana</li>
+<li>5044: Logstash beats</li>
+</ul>
+<h3 id="Dockerfile"><a href="#Dockerfile" class="headerlink" title="Dockerfile"></a>Dockerfile</h3><p>這個測試主要的目的是學習如何使用 ELK 達成目的。在不修改任何程式的前提下，第一階段要取得Log 資料須由 MS SQL 匯出到 Logstash。</p>
+<p>因為有些 Container 相關的設定，所以我用了 <code>Dockerfile</code> 來把設定檔塞到 Container 裡:</p>
+<pre class=" language-dockerfile"><code class="language-dockerfile">FROM sebp/elk
+# 在Container 建立一個工作資料夾，我們在本機編輯好的設定檔與其他必要檔案都可透過這個資料夾與Container交換
+RUN mkdir /workspace
+WORKDIR /workspace
+ADD . /workspace
+
+#另外我在本機有編輯了 logstash 的設定檔需要一開始就塞進 Container 裡。這邊可以將檔案加到指定的 Container 上的路徑
+ADD logstash-mssql.conf /etc/logstash/conf.d/logstash-mssql.conf
+
+#這個測試會用到 logstash 的 JDBC plugin。用以下這個步驟安裝
+RUN gosu logstash /opt/logstash/bin/logstash-plugin install logstash-input-jdbc
+</code></pre>
+<p><code>logstash-input-jdbc</code> 並沒有包含不同資料庫所需要的驅動程式。我們所使用的資料庫是 SQL Server。我們需要自己 下載 JDBC 驅動程式。</p>
+<p>下載後解開壓縮檔把 sqljdbc42.jar 跟 Dockerfile 放在同一個資料夾。</p>
+<h3 id="docker-compose"><a href="#docker-compose" class="headerlink" title="docker-compose"></a>docker-compose</h3><p>目前只有一個 image/container，應該是用不到 docker-compose 來管理。但用 docker-compose 可以幫助我們記得要指定的連接埠。省的啟動 container 得打一大串指令。</p>
+<pre class=" language-dockerfile"><code class="language-dockerfile">version: '2'
+services:
+elk:
+build: . # 要 docker-compose 執行時建置同目錄下的 Dockerfile
+container_name: elk # 幫 Container 命名，之後比較好打指令
+volumes:
+  - .:/workspace # 將本地資料夾掛在Container的 /workspace 資料夾下 [host:container]
+ports:
+  - "9200:9200" # 對應本地與 Container 的連接埠
+  - "5601:5601"
+  - "5044:5044"
+</code></pre>
+<p>同樣跟 Dockerfile 放一起。在該資料夾下執行</p>
+<pre class=" language-bash"><code class="language-bash">docker-compose up
+</code></pre>
+<p>就可以啟動 container</p>
+<h2 id="設定-Logstash"><a href="#設定-Logstash" class="headerlink" title="設定 Logstash"></a>設定 Logstash</h2><p><code>sebp/elk</code> 裡已經設定好一些 Logstash 設定檔。可以抓 beats, 系統記錄檔等等，並會把結果輸出在 localhost:9200 的 Elasticsearh 。在 container 裡的 <code>/etc/logstash/conf.d/</code> 可以找到這些設定檔。之前提到需要撈 SQL Server 的設定檔也需要放在 <code>etc/logstash/conf.d/</code> Logstash 啟動時方可一併載入。</p>
+<p>Docerfile 裡的 <code>ADD logstash-mssql.conf /etc/logstash/conf.d/logstash-mssql.conf</code> 這行就是要幫我們在 container 建立時把同資料夾裡的 logstash-mssql.conf 塞到 Container 的 <code>/etc/logstash/conf.d/</code> 資料夾。</p>
+<p>以下是我們設定 Logstash 撈取 SQL Server 資料庫的設定檔:</p>
+<pre class=" language-nginx"><code class="language-nginx">input<span class="token punctuation">{</span>
+  jdbc <span class="token punctuation">{</span>
+    jdbc_driver_library <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"/workplace/sqljdbc42.jar"</span>
+    jdbc_driver_class <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"com.microsoft.sqlserver.jdbc.SQLServerDriver"</span>
+    jdbc_connection_string <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"jdbc:sqlserver://10.0.75.1:1433;databaseName=LogDatabase"</span>
+    jdbc_user <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"sa"</span>
+    jdbc_password <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"sa"</span>
+    jdbc_validate_connection <span class="token operator">=</span><span class="token operator">></span> <span class="token boolean">true</span>
+    statement <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"SELECT * FROM Logs"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+output <span class="token punctuation">{</span>
+  elasticsearch <span class="token punctuation">{</span>
+    hosts <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"localhost:9200"</span>
+    <span class="token keyword">index</span> <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"apilogs"</span>
+    document_id <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"%{id}"</span>
+    document_type <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"ApiLog"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>jdbc 區段可設定資料抓取方式。以及 SQL Server 伺服器的連線資訊。這邊要注意 SQL Server 是在本機 (Windows) 上執行的 SQL Server Express。從 Container 裡面用 JDBC 連線到 SQL Server 需要透過 HTTP 通訊協定，但 SQL SERVER 預設是禁止 HTTP 連線存取的。所以我們還需要修改一下 SQL SERVER 的設定:</p>
+<p><code>Sql Server Configuration Manager</code> &gt; <code>SQL Server Network Configuration</code> &gt; <code>Protocols for MSSQLSERVER</code> &gt; <code>TCP/IP</code> 設為 <code>Enabled</code> 後重新啟動資料庫服務即可。</p>
+<p>另外，我的 docker container 與本機 連線的方式 用的是 Bridge Driver。可以在本機使用 <code>docker network inspect bridge</code> 指令來查看網路介面的設定狀況。</p>
+<p>回到 Logstash config 檔：</p>
+<pre class=" language-ruby"><code class="language-ruby">jdbc_connection_string <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"jdbc:sqlserver://10.0.75.1:1433;databaseName=LogDatabase"</span>`
+</code></pre>
+<p>我在這裡直接將連線資訊指向 Docker 在 Host 機器上安裝的網路介面。</p>
+<pre class=" language-ruby"><code class="language-ruby">statement <span class="token operator">=</span><span class="token operator">></span> <span class="token string">"SELECT * FROM Logs"</span>
+</code></pre>
+<p>撈資料時使用的 SQL Statement</p>
+<p>設定檔好之後，可以使用 Logstash 的指令來跑跑看︰</p>
+<p>首先我們要取得 Container 的 Shell 指令介面，在Windows 的指令模式下輸入：</p>
+<pre class=" language-bash"><code class="language-bash">docker <span class="token function">exec</span> -it elk /bin/bash
+</code></pre>
+<p>首先確保 Dockerfile 所執行複製進 Container 是正確的 Logstash .conf 檔，可用 vim 等純文字編輯程式開來看看：</p>
+<pre class=" language-bash"><code class="language-bash">vim /etc/logstash/conf.d/logstash-mssql.conf
+</code></pre>
+<p>無誤後 :q! 退出 vim 就可跑跑 Logstash 看看效果如何了</p>
+<pre class=" language-bash"><code class="language-bash">/opt/logstash/bin/logstash -f /etc/logstash/conf.d/logstash-mssql.conf
+</code></pre>
+
+  </div>
+  
+<nav class="footer-nav">
+  
+    <div class="footer-nav__prev">
+      <div class="footer-nav__label">
+        較新的那篇
+      </div>
+      <a href="/posts/33675/">
+        佈署 Rails App 到 Ubuntu 16
+      </a>
+    </div>
+  
+  
+</nav>
+
+
+</article>
+
+
+      </div>
+      <div class="sidebar column is-4">
+        <aside>
+  
+    <aside class="search widget">
+  <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form" target="_blank">
+    <div class="control has-icons-right">
+      <input type="search" name="q" class="input" placeholder="搜尋">
+      <span class="icon is-small is-right">
+        <i class="fa fa-search"></i>
+      </span>
+    </div>
+    <input type="hidden" name="sitesearch" value="http://alexpacer.github.io">
+  </form>
+</aside>
+
+  
+    <div class="widget-wrap">
+  <div class="widget-title">作者</div>
+  <aside class="profile media widget">
+    <figure class="profile-avatar media-left">
+      <img src="/images/avatar.jpg" class="avatar" alt="Alex Wei">
+    </figure>
+    <div class="media-content">
+      <p>
+        <strong>
+          <span>Alex Wei</span>
+          <span class="icon">
+            <a href="https://github.com/alexpacer" target="_blank">
+              <i class="fa fa-github"></i>
+            </a>
+          </span>
+        </strong>
+        <br>
+        <span></span>
+      </p>
+    </div>
+  </aside>
+</div>
+
+  
+    
+  <div class="widget-wrap">
+    <div class="widget-title">最近更新</div>
+    <div class="widget">
+      <ul class="recent-post">
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/d974dd78/" class="">
+                  WebDeployment 的一些前置設定
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2019-06-21
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/904aaacf/" class="">
+                  ASP.net Core (2.2) 整理 1 :: [Auth &amp; Authorize]
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2019-02-14
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/17bf5966/" class="">
+                  Windows Server 安裝 RabbitMQ
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2018-12-12
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/ebf2f33a/" class="">
+                  Redis cluster on CentOs
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2018-04-27
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/761f59e/" class="">
+                  智付通金流整合
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2017-12-12
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">標籤雲</h3>
+    <div class="widget">
+      <a href="/tags/net/" style="font-size: 10px;">.net</a> <a href="/tags/IIS-WebDeploy/" style="font-size: 10px;">IIS, WebDeploy</a> <a href="/tags/asp-net-core/" style="font-size: 10px;">asp.net-core</a> <a href="/tags/elk/" style="font-size: 10px;">elk</a> <a href="/tags/nginx/" style="font-size: 10px;">nginx</a> <a href="/tags/rabbit-mq/" style="font-size: 10px;">rabbit-mq</a> <a href="/tags/rails/" style="font-size: 20px;">rails</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ruby/" style="font-size: 10px;">ruby</a> <a href="/tags/unit-testing/" style="font-size: 10px;">unit-testing</a>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">封存</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">April 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a><span class="archive-list-count">4</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    <div class="widget-wrap">
+    <h3 class="widget-title">連結</h3>
+    <div class="widget">
+        <ul style="list-style: circle">
+            <li>
+                <a href="https://blog.ryantseng.me/" class="">
+                    Ryan - 不務正業 全端 開發記事
+                </a>
+            </li>
+
+            <li>
+                <a href="https://eugenesu0515.github.io/Blog/" class="">
+                    Eugene
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+  
+</aside>
+
+      </div>
+    </div>
+  </div>
+  <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"></a><br>This blog is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+        
+
+        <!-- 
+          <br />
+          <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Alex Wei</span>'s Workを著作者とするこの作品は<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">クリエイティブ・コモンズの 表示 - 継承 4.0 国際 ライセンス</a>で提供されています。 -->
+      </p>
+    </div>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>

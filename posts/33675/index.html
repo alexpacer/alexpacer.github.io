@@ -1,0 +1,438 @@
+
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  <title>佈署 Rails App 到 Ubuntu 16 | The name is Alex</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1">
+  <meta name="description" content="專案現在到了一個沒有 .NET 的工作環境，臨時趕一專案需要趕快做一個 EC 平台串金流。 基於對 Rails 的愛，選了 Rails 來開發這個專案。時間雖然很趕，但 Rails 的框架很多東西都做好了，開發起來就很輕鬆。 設施＆佈局佈署目標是 Google Computing Cloud, 本來打算用 Container Engine 但因為 SSL 已經設定好在一個 Computing Cl">
+<meta name="keywords" content="rails,nginx">
+<meta property="og:type" content="article">
+<meta property="og:title" content="佈署 Rails App 到 Ubuntu 16">
+<meta property="og:url" content="http://alexpacer.github.io/posts/33675/index.html">
+<meta property="og:site_name" content="The name is Alex">
+<meta property="og:description" content="專案現在到了一個沒有 .NET 的工作環境，臨時趕一專案需要趕快做一個 EC 平台串金流。 基於對 Rails 的愛，選了 Rails 來開發這個專案。時間雖然很趕，但 Rails 的框架很多東西都做好了，開發起來就很輕鬆。 設施＆佈局佈署目標是 Google Computing Cloud, 本來打算用 Container Engine 但因為 SSL 已經設定好在一個 Computing Cl">
+<meta property="og:locale" content="tw">
+<meta property="og:updated_time" content="2019-10-02T03:53:13.163Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="佈署 Rails App 到 Ubuntu 16">
+<meta name="twitter:description" content="專案現在到了一個沒有 .NET 的工作環境，臨時趕一專案需要趕快做一個 EC 平台串金流。 基於對 Rails 的愛，選了 Rails 來開發這個專案。時間雖然很趕，但 Rails 的框架很多東西都做好了，開發起來就很輕鬆。 設施＆佈局佈署目標是 Google Computing Cloud, 本來打算用 Container Engine 但因為 SSL 已經設定好在一個 Computing Cl">
+  <link rel="icon" href="/favicon.ico">
+  
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  
+    <link rel="stylesheet" href="/css/prism.css">
+  
+  
+<script type="application/ld+json">
+  {
+  "@context": "http://schema.org",
+  "@type": "BlogPosting",
+  "headline": "佈署 Rails App 到 Ubuntu 16",
+  "name": "佈署 Rails App 到 Ubuntu 16",
+  "datePublished": "2017-06-29T03:26:59.000Z",
+  "dateModified": "2019-10-02T03:53:13.163Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://alexpacer.github.io/posts/33675/index.html"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Alex Wei",
+    "image": "/images/avatar.jpg"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Alex Wei",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/images/avatar.jpg"
+    }
+  }
+}
+</script>
+
+  
+  
+    <script src="/js/prism.js"></script>
+  
+  <!-- <link href="/css/prism.css" rel="stylesheet" /> -->
+  <link href="/css/prism-line-numbers.css" rel="stylesheet">
+<link rel="stylesheet" href="/css/prism-twilight.css" type="text/css"></head>
+</html>
+<body>
+  
+
+  <header class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a href="/" class="navbar-item">
+      The name is Alex
+    </a>
+  </div>
+</header>
+
+  <div class="container">
+    <div class="columns">
+      <div class="main column is-8">
+        <article class="post">
+  <figure class="post-thumbnail">
+    
+
+  </figure>
+  <span>2017-06-29
+</span>
+  <h1 class="title">佈署 Rails App 到 Ubuntu 16</h1>
+  
+  <div class="tags">
+    
+      <a class="tag" href="/tags/rails/">rails</a>
+    
+      <a class="tag" href="/tags/nginx/">nginx</a>
+    
+  </div>
+
+
+  <div class="content">
+    <h2 id="專案"><a href="#專案" class="headerlink" title="專案"></a>專案</h2><p>現在到了一個沒有 .NET 的工作環境，臨時趕一專案需要趕快做一個 EC 平台串金流。</p>
+<p>基於對 Rails 的愛，選了 Rails 來開發這個專案。時間雖然很趕，但 Rails 的框架很多東西都做好了，開發起來就很輕鬆。</p>
+<h2 id="設施＆佈局"><a href="#設施＆佈局" class="headerlink" title="設施＆佈局"></a>設施＆佈局</h2><p>佈署目標是 Google Computing Cloud, 本來打算用 Container Engine 但因為 SSL 已經設定好在一個 Computing Cloud VM 上。找了一下暫時找不到怎麼把 Computing Enging 的 vm 跟 Container engine 內網串起來。所以還是建了 Ubuntu VM 來佈署。</p>
+<p>這次佈署的架構在這: <a href="/posts/fb91083f/" title="佈署 Rails App 的一些想法">佈署 Rails App 的一些想法</a></p>
+<p>在已經掛了 SSL 的 Nginx 上做簡單的 Reverse Proxy:</p>
+<pre class=" language-nginx"><code class="language-nginx"><span class="token keyword">upstream</span> store_milife <span class="token punctuation">{</span>
+    <span class="token keyword">server</span> <span class="token number">10</span><span class="token punctuation">.</span>x<span class="token punctuation">.</span>x<span class="token punctuation">.</span>x<span class="token punctuation">;</span>
+    <span class="token keyword">server</span> <span class="token number">10</span><span class="token punctuation">.</span>x<span class="token punctuation">.</span>x<span class="token punctuation">.</span>x<span class="token punctuation">;</span>
+    <span class="token keyword">server</span> <span class="token number">10</span><span class="token punctuation">.</span>x<span class="token punctuation">.</span>x<span class="token punctuation">.</span>x<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">server</span> <span class="token punctuation">{</span>
+    <span class="token keyword">location</span> <span class="token operator">/</span> <span class="token punctuation">{</span>
+        <span class="token keyword">proxy_pass</span> <span class="token keyword">http</span><span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>store<span class="token operator">-</span>sites<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>透過內網把 Request 轉到我們部署了 Rails 的VM。這裡我們裝了另一個 Nginx 讓它先處理 Static asserts 再處理其他的 Request，我們把這些其他的 Request 轉到 unicorn 建立的 unix socket</p>
+<pre class=" language-nginx"><code class="language-nginx"><span class="token keyword">upstream</span> app <span class="token punctuation">{</span>
+    <span class="token keyword">server</span> unix<span class="token punctuation">:</span><span class="token operator">/</span>opt<span class="token operator">/</span>store<span class="token operator">/</span>shared<span class="token operator">/</span>sockets<span class="token operator">/</span>unicorn<span class="token punctuation">.</span>sock fail_timeout<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">server</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">root</span> <span class="token operator">/</span>opt<span class="token operator">/</span>store<span class="token operator">/</span>public<span class="token punctuation">;</span>
+
+    <span class="token keyword">try_files</span> <span class="token variable">$uri</span><span class="token operator">/</span><span class="token keyword">index</span><span class="token punctuation">.</span>html <span class="token variable">$uri</span> @app<span class="token punctuation">;</span>
+
+    <span class="token keyword">location</span> @app <span class="token punctuation">{</span>
+        <span class="token keyword">proxy_set_header</span> X<span class="token operator">-</span>Forwarded<span class="token operator">-</span>For <span class="token variable">$proxy_add_x_forwarded_for</span><span class="token punctuation">;</span>
+        <span class="token keyword">proxy_set_header</span> Host <span class="token variable">$http_host</span><span class="token punctuation">;</span>
+        <span class="token keyword">proxy_redirect</span> off<span class="token punctuation">;</span>
+        <span class="token keyword">proxy_pass</span> <span class="token keyword">http</span><span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>app<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<h2 id="Session"><a href="#Session" class="headerlink" title="Session"></a>Session</h2><p>這麼一來因為我們有了 Load Balance 的機制，Rails App 就得把 Session 往共用的儲存空間放，不能再放本機記憶體，<a href="https://github.com/rails/activerecord-session_store" target="_blank" rel="noopener">這個 GEM</a> 可讓你很輕鬆的設定資料庫為 Session store，在原本的資料庫多一個表格存放 Session</p>
+<pre class=" language-ruby"><code class="language-ruby">gem <span class="token string">'activerecord-session_store'</span>
+</code></pre>
+<h2 id="送信功能"><a href="#送信功能" class="headerlink" title="送信功能"></a>送信功能</h2><p>結帳後送信在 Rails 也是很簡單的，Rails 把送信的機制做在 Active Job 裏。 Active Job 讓 Rails App 在需要執行一些背景工作時可以透過一致的介面溝通。你可以選用你喜歡的 Queue 來處理在 Application 裡送出的 Job 。</p>
+<p>Rails 預設的 Async Queue 是跟著 application 跑在同一個執行緒的。在開發這個專案的時候我選用了 <a href="https://github.com/resque/resque" target="_blank" rel="noopener">Resque</a>。Resque 是把 Queue 存在 Redis 裡。</p>
+<h2 id="Email-的設定"><a href="#Email-的設定" class="headerlink" title="Email 的設定"></a>Email 的設定</h2><pre class=" language-ruby"><code class="language-ruby">config<span class="token punctuation">.</span>active_job<span class="token punctuation">.</span>queue_adapter <span class="token operator">=</span> <span class="token symbol">:resque</span>
+<span class="token comment" spellcheck="true"># 根據不同的環境來設定 Queue 可避免類似 QA 環境的 Job 被 Production 吃到的問題</span>
+config<span class="token punctuation">.</span>active_job<span class="token punctuation">.</span>queue_name_prefix <span class="token operator">=</span> <span class="token string">"store_<span class="token interpolation"><span class="token delimiter tag">#{</span>Rails<span class="token punctuation">.</span>env<span class="token delimiter tag">}</span></span>"</span>
+<span class="token comment" spellcheck="true"># 把要寄出的信件開在開發機上的瀏覽器預覽方便開發調整</span>
+config<span class="token punctuation">.</span>action_mailer<span class="token punctuation">.</span>delivery_method <span class="token operator">=</span> <span class="token symbol">:smtp</span>
+<span class="token comment" spellcheck="true"># 正式環境下用 :smtp 沒問題，但是測試環境下我用了 `letter_opener`</span>
+<span class="token comment" spellcheck="true"># 測試環境：</span>
+config<span class="token punctuation">.</span>action_mailer<span class="token punctuation">.</span>delivery_method <span class="token operator">=</span> <span class="token symbol">:letter_opener</span>
+</code></pre>
+<p>接下來我們可用</p>
+<pre class=" language-bash"><code class="language-bash">$ rails g mailer StoreMailer
+</code></pre>
+<p>來建立幫我們寄件的郵差，在 app/mailers/store_mailer.rb 裏我們可以設定要寄出 Email 的內容。</p>
+<p>寄信對 Rails 來說，就像在 Render HTML 頁面一樣，在 <code>app/views/store_mailer</code> 裡我們將設定對應的 view 作為 Email 的內容。比較不同的是，Mailer 要使用 heleper 的話需要自己指定 helper 不會自已載入。</p>
+<pre class=" language-ruby"><code class="language-ruby"><span class="token keyword">class</span> <span class="token class-name">StoreMailer</span> <span class="token operator">&lt;</span> <span class="token constant">ApplicationMailer</span>
+  helper <span class="token symbol">:application</span> 
+  <span class="token comment" spellcheck="true"># Load app/helpers/application_helper.rb</span>
+  <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> 
+<span class="token keyword">end</span>
+</code></pre>
+<p>另外在 mailer class 裡我們需要設定內容，<code>def order_notification</code> 會對應到 <code>app/views/store_mailer/order_notification.erb</code></p>
+<pre class=" language-ruby"><code class="language-ruby"><span class="token keyword">def</span> <span class="token function">order_notification</span><span class="token punctuation">(</span>user_session<span class="token punctuation">,</span> order<span class="token punctuation">)</span>     
+    <span class="token variable">@header</span> <span class="token operator">=</span> <span class="token punctuation">{</span>         
+        <span class="token symbol">:title</span> <span class="token operator">=</span><span class="token operator">></span> <span class="token string">'訂購完成通知'</span><span class="token punctuation">,</span>
+        <span class="token symbol">:disclaimer</span> <span class="token operator">=</span><span class="token operator">></span> <span class="token keyword">true</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token variable">@user</span> <span class="token operator">=</span> user_session
+    <span class="token variable">@order</span> <span class="token operator">=</span> order
+    <span class="token function">mail</span><span class="token punctuation">(</span>to<span class="token punctuation">:</span> <span class="token variable">@user</span><span class="token punctuation">[</span><span class="token string">'email'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> subject<span class="token punctuation">:</span> <span class="token variable">@header</span><span class="token punctuation">[</span><span class="token symbol">:title</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token keyword">end</span>
+</code></pre>
+<p>View 的寫法就與 HTML 頁面的 ERB 一樣</p>
+<h3 id="執行-Mailer-Job"><a href="#執行-Mailer-Job" class="headerlink" title="執行 Mailer Job"></a>執行 Mailer Job</h3><p>Resque <code>config/initializers/resque.rb</code> 可以載入 <code>config/resque.yml</code> 並藉此設定與 Redis 的連線</p>
+<h4 id="config-resque-yml"><a href="#config-resque-yml" class="headerlink" title="config/resque.yml"></a>config/resque.yml</h4><pre class=" language-yaml"><code class="language-yaml"><span class="token key atrule">development</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">6379</span>
+<span class="token key atrule">test</span><span class="token punctuation">:</span> localhost<span class="token punctuation">:</span><span class="token number">6379</span>
+<span class="token key atrule">production</span><span class="token punctuation">:</span> 10.x.x.x<span class="token punctuation">:</span><span class="token number">6379</span>
+</code></pre>
+<h4 id="config-initializers-resque-rb"><a href="#config-initializers-resque-rb" class="headerlink" title="config/initializers/resque.rb"></a>config/initializers/resque.rb</h4><pre class=" language-ruby"><code class="language-ruby">rails_root <span class="token operator">=</span> <span class="token constant">ENV</span><span class="token punctuation">[</span><span class="token string">'RAILS_ROOT'</span><span class="token punctuation">]</span> <span class="token operator">||</span> <span class="token builtin">File</span><span class="token punctuation">.</span><span class="token function">dirname</span><span class="token punctuation">(</span>__FILE__<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">'/../..'</span>
+rails_env <span class="token operator">=</span> <span class="token constant">ENV</span><span class="token punctuation">[</span><span class="token string">'RAILS_ENV'</span><span class="token punctuation">]</span> <span class="token operator">||</span> <span class="token string">'development'</span>
+
+resque_config <span class="token operator">=</span> <span class="token constant">YAML</span><span class="token punctuation">.</span><span class="token function">load_file</span><span class="token punctuation">(</span>rails_root <span class="token operator">+</span> <span class="token string">'/config/resque.yml'</span><span class="token punctuation">)</span>
+<span class="token constant">Resque</span><span class="token punctuation">.</span>redis <span class="token operator">=</span> resque_config<span class="token punctuation">[</span>rails_env<span class="token punctuation">]</span>
+</code></pre>
+<p>執行 Resque 的工作步驟很簡單，因為在此專案裡我有使用 foreman 管理不同的 process, 所以在 Procfile 裏我多加了下列工作：</p>
+<pre class=" language-ruby"><code class="language-ruby">mailer<span class="token punctuation">:</span> rake environment resque<span class="token symbol">:work</span> <span class="token constant">QUEUE</span><span class="token operator">=</span>store_$<span class="token punctuation">{</span><span class="token constant">RAILS_ENV</span><span class="token punctuation">}</span>_mailers
+</code></pre>
+<p>執行時，只需要如下指令即可啟動郵差的執行緒</p>
+<pre class=" language-bash"><code class="language-bash">foreman start mailer
+</code></pre>
+<h3 id="Active-Job-背景執行的工作"><a href="#Active-Job-背景執行的工作" class="headerlink" title="Active Job 背景執行的工作"></a>Active Job 背景執行的工作</h3><p>系統長大的時候常常會遇到一些效能的瓶頸，比如說，我們要把資料庫裡的資料匯出成 Excel 讓人下載，資料庫那邊的效能瓶頸以外，就是處理效能的瓶頸了。Active Job 讓我可以把要做的事情丟到 Queue 裡讓另一個 process 來處理。 Rails Application 就不需要在 Request Timeout 前短短回應時間內把它做完。</p>
+
+  </div>
+  
+<nav class="footer-nav">
+  
+    <div class="footer-nav__prev">
+      <div class="footer-nav__label">
+        較新的那篇
+      </div>
+      <a href="/posts/fb91083f/">
+        佈署 Rails App 的一些想法
+      </a>
+    </div>
+  
+  
+    <div class="footer-nav__next">
+      <div class="footer-nav__label">
+        較舊的那篇
+      </div>
+      <a href="/posts/fe234da5/">
+        體驗 Elasticsearch 的魅力 - Part 1 :: Docker
+      </a>
+    </div>
+  
+</nav>
+
+
+</article>
+
+
+      </div>
+      <div class="sidebar column is-4">
+        <aside>
+  
+    <aside class="search widget">
+  <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form" target="_blank">
+    <div class="control has-icons-right">
+      <input type="search" name="q" class="input" placeholder="搜尋">
+      <span class="icon is-small is-right">
+        <i class="fa fa-search"></i>
+      </span>
+    </div>
+    <input type="hidden" name="sitesearch" value="http://alexpacer.github.io">
+  </form>
+</aside>
+
+  
+    <div class="widget-wrap">
+  <div class="widget-title">作者</div>
+  <aside class="profile media widget">
+    <figure class="profile-avatar media-left">
+      <img src="/images/avatar.jpg" class="avatar" alt="Alex Wei">
+    </figure>
+    <div class="media-content">
+      <p>
+        <strong>
+          <span>Alex Wei</span>
+          <span class="icon">
+            <a href="https://github.com/alexpacer" target="_blank">
+              <i class="fa fa-github"></i>
+            </a>
+          </span>
+        </strong>
+        <br>
+        <span></span>
+      </p>
+    </div>
+  </aside>
+</div>
+
+  
+    
+  <div class="widget-wrap">
+    <div class="widget-title">最近更新</div>
+    <div class="widget">
+      <ul class="recent-post">
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/d974dd78/" class="">
+                  WebDeployment 的一些前置設定
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2019-06-21
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/904aaacf/" class="">
+                  ASP.net Core (2.2) 整理 1 :: [Auth &amp; Authorize]
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2019-02-14
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/17bf5966/" class="">
+                  Windows Server 安裝 RabbitMQ
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2018-12-12
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/ebf2f33a/" class="">
+                  Redis cluster on CentOs
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2018-04-27
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/761f59e/" class="">
+                  智付通金流整合
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2017-12-12
+
+                </small>
+              </p>
+            </div>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">標籤雲</h3>
+    <div class="widget">
+      <a href="/tags/net/" style="font-size: 10px;">.net</a> <a href="/tags/IIS-WebDeploy/" style="font-size: 10px;">IIS, WebDeploy</a> <a href="/tags/asp-net-core/" style="font-size: 10px;">asp.net-core</a> <a href="/tags/elk/" style="font-size: 10px;">elk</a> <a href="/tags/nginx/" style="font-size: 10px;">nginx</a> <a href="/tags/rabbit-mq/" style="font-size: 10px;">rabbit-mq</a> <a href="/tags/rails/" style="font-size: 20px;">rails</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ruby/" style="font-size: 10px;">ruby</a> <a href="/tags/unit-testing/" style="font-size: 10px;">unit-testing</a>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">封存</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">April 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a><span class="archive-list-count">4</span></li></ul>
+    </div>
+  </div>
+
+
+  
+    <div class="widget-wrap">
+    <h3 class="widget-title">連結</h3>
+    <div class="widget">
+        <ul style="list-style: circle">
+            <li>
+                <a href="https://blog.ryantseng.me/" class="">
+                    Ryan - 不務正業 全端 開發記事
+                </a>
+            </li>
+
+            <li>
+                <a href="https://eugenesu0515.github.io/Blog/" class="">
+                    Eugene
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+  
+</aside>
+
+      </div>
+    </div>
+  </div>
+  <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"></a><br>This blog is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+        
+
+        <!-- 
+          <br />
+          <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Alex Wei</span>'s Workを著作者とするこの作品は<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">クリエイティブ・コモンズの 表示 - 継承 4.0 国際 ライセンス</a>で提供されています。 -->
+      </p>
+    </div>
+  </div>
+</footer>
+
+
+  
+</body>
+</html>
