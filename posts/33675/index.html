@@ -219,6 +219,9 @@ resque_config <span class="token operator">=</span> <span class="token constant"
 </article>
 
 
+<div id="disqus_thread"></div>
+
+
       </div>
       <div class="sidebar column is-4">
         <aside>
@@ -265,6 +268,26 @@ resque_config <span class="token operator">=</span> <span class="token constant"
     <div class="widget-title">最近更新</div>
     <div class="widget">
       <ul class="recent-post">
+        
+          <li class="recent-post-item media">
+            <figure class="media-left">
+              
+
+            </figure>
+            <div class="media-content">
+              <p class="">
+                <a href="/posts/af2d802f/" class="">
+                  Actor Model - 聊聊對 Actor Model 的理解
+                </a>
+              </p>
+              <p class="">
+                <small>
+                  2019-10-17
+
+                </small>
+              </p>
+            </div>
+          </li>
         
           <li class="recent-post-item media">
             <figure class="media-left">
@@ -346,26 +369,6 @@ resque_config <span class="token operator">=</span> <span class="token constant"
             </div>
           </li>
         
-          <li class="recent-post-item media">
-            <figure class="media-left">
-              
-
-            </figure>
-            <div class="media-content">
-              <p class="">
-                <a href="/posts/761f59e/" class="">
-                  智付通金流整合
-                </a>
-              </p>
-              <p class="">
-                <small>
-                  2017-12-12
-
-                </small>
-              </p>
-            </div>
-          </li>
-        
       </ul>
     </div>
   </div>
@@ -376,7 +379,7 @@ resque_config <span class="token operator">=</span> <span class="token constant"
   <div class="widget-wrap">
     <h3 class="widget-title">標籤雲</h3>
     <div class="widget">
-      <a href="/tags/net/" style="font-size: 10px;">.net</a> <a href="/tags/IIS-WebDeploy/" style="font-size: 10px;">IIS, WebDeploy</a> <a href="/tags/asp-net-core/" style="font-size: 10px;">asp.net-core</a> <a href="/tags/elk/" style="font-size: 10px;">elk</a> <a href="/tags/nginx/" style="font-size: 10px;">nginx</a> <a href="/tags/rabbit-mq/" style="font-size: 10px;">rabbit-mq</a> <a href="/tags/rails/" style="font-size: 20px;">rails</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ruby/" style="font-size: 10px;">ruby</a> <a href="/tags/unit-testing/" style="font-size: 10px;">unit-testing</a>
+      <a href="/tags/net/" style="font-size: 10px;">.net</a> <a href="/tags/IIS/" style="font-size: 10px;">IIS</a> <a href="/tags/WebDeploy/" style="font-size: 10px;">WebDeploy</a> <a href="/tags/actor-model/" style="font-size: 10px;">actor-model</a> <a href="/tags/asp-net-core/" style="font-size: 10px;">asp.net-core</a> <a href="/tags/elk/" style="font-size: 10px;">elk</a> <a href="/tags/nginx/" style="font-size: 10px;">nginx</a> <a href="/tags/rabbit-mq/" style="font-size: 10px;">rabbit-mq</a> <a href="/tags/rails/" style="font-size: 20px;">rails</a> <a href="/tags/redis/" style="font-size: 10px;">redis</a> <a href="/tags/ruby/" style="font-size: 10px;">ruby</a> <a href="/tags/unit-testing/" style="font-size: 10px;">unit-testing</a> <a href="/tags/windows/" style="font-size: 10px;">windows</a>
     </div>
   </div>
 
@@ -386,7 +389,7 @@ resque_config <span class="token operator">=</span> <span class="token constant"
   <div class="widget-wrap">
     <h3 class="widget-title">封存</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">April 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a><span class="archive-list-count">4</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/10/">October 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/04/">April 2018</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a><span class="archive-list-count">4</span></li></ul>
     </div>
   </div>
 
@@ -422,15 +425,31 @@ resque_config <span class="token operator">=</span> <span class="token constant"
     <div class="content has-text-centered">
       <p>
         <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"></a><br>This blog is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
-        
 
-        <!-- 
+
+        <!--
           <br />
           <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Alex Wei</span>'s Workを著作者とするこの作品は<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">クリエイティブ・コモンズの 表示 - 継承 4.0 国際 ライセンス</a>で提供されています。 -->
       </p>
     </div>
   </div>
 </footer>
+
+
+  <script>
+    var disqus_shortname = 'the-name-is-alex';
+    
+    var disqus_url = 'http://alexpacer.github.io/posts/33675/';
+    
+    (function(){
+      var dsq = document.createElement('script');
+      dsq.type = 'text/javascript';
+      dsq.async = true;
+      dsq.src = '//go.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+
 
 
   
